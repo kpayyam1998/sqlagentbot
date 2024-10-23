@@ -9,26 +9,6 @@ load_dotenv()
 llm = ChatOpenAI(
     temperature=0.9,max_tokens=500
 )
-@tool
-def SqlQueryGenerator(user_input : str)->str:
-    """
-    A tool that generates SQL queries based on user input.
-    """
-   
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system","you are an helpfull assistent , i dont know how to write best SQL Queries for my problem"),
-        
-            ("user","{query}")
-        ]
-    )
-
-    chain = llm | prompt
-
-    response=chain.invoke(user_input)
-
-    return response
-
 
 @tool
 def SqlQuerySummarizer(user_input : str)->str:
@@ -38,12 +18,35 @@ def SqlQuerySummarizer(user_input : str)->str:
    
     prompt = ChatPromptTemplate.from_messages(
         [
+            ("system","you are an helpfull assistent to write the SQL Queries"),
+        
+            ("user","{query}")
+        ]
+    )
+
+    chain = prompt | llm 
+
+    response = chain.invoke({"query":user_input})
+
+    return response.content
+
+
+
+@tool
+def SqlQuerySummarizer(user_input : str)->str:
+    """
+    A tool that generates SQL queries based on user input.
+    """
+    prompt = ChatPromptTemplate.from_messages(
+        [
             ("system","you are an helpfull assistent , Summarize the SQL Queries"),
         
             ("user","{query}")
         ]
     )
 
-    chain = llm | prompt
-    response=chain.invoke(user_input)
-    return response
+    chain = prompt | llm 
+
+    response = chain.invoke({"query":user_input})
+
+    return response.content
