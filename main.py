@@ -1,32 +1,58 @@
-import os
 from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents.format_scratchpad.openai_tools import (
+    format_to_openai_tool_messages,
+)
 from dotenv import load_dotenv
+
+from langchain.agents import AgentExecutor
 
 load_dotenv()
 
-#Load api key
-openai_key = os.getenv("OPENAI_API_KEY")
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 
-# Initialize OpenAI Chat
+from langchain.agents import tool
 
-llm = ChatOpenAI(temperature=0.9, max_tokens=150)
 
-# Function to generate a response
+@tool
+def get_word_length(word: str) -> int:
+    """Returns the length of a word."""
+    return len(word)
 
-def generate_response(user_message : str) -> str:
-    messages=[
+tools = [get_word_length]
+llm_with_tools = llm.bind_tools(tools)
+
+
+
+prompt = ChatPromptTemplate.from_messages(
+    [
         (
             "system",
-            "You are a helpful assistent you are going to teach me the steps to learn english"
+            "You are very powerful assistant, but don't know current events",
         ),
-        ("human",user_message)
+        ("user", "{input}"),
+        MessagesPlaceholder(variable_name="agent_scratchpad"),
     ]
-    response=llm.invoke(messages)
+)
 
-    return response.content
 
-# Test the function
 
-user_message = "How to speak english in 30 days?"
-print(generate_response(user_message))
+agent = (
+    {
+        "input": lambda x: x["input"],
+        "agent_scratchpad": lambda x: format_to_openai_tool_messages(
+            x["intermediate_steps"]
+        ),
+    }
+    | prompt
+    | llm_with_tools
+    | OpenAIToolsAgentOutputParser()
+)
 
+
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+res=agent_executor.invoke({"input":"how many letter from kp"})
+
+print(res)
