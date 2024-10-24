@@ -33,13 +33,13 @@ def SqlQueryWritter(user_input : str)->str:
 
 
 @tool
-def SqlQuerySummarizer(user_input : str)->str:
+def CompanyNameGenerator(user_input : str)->str:
     """
     A tool that generates SQL queries based on user input.
     """
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system","you are an helpfull assistent , Summarize the SQL Queries"),
+            ("system","you are an helpfull assistent , Generate Beatifull comapnyname"),
         
             ("user","{query}")
         ]
