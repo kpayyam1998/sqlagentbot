@@ -1,4 +1,6 @@
 python-dotenv
 langchain
 langchain-openai==0.2.3
+Flask==3.0.3
+
 
