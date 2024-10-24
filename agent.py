@@ -1,46 +1,68 @@
-from tools import SqlQueryGenerator,SqlQuerySummarizer
+from dotenv import load_dotenv
+from tools import SqlQuerySummarizer,SqlQueryWritter
+
+from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor,ZeroShotAgent
-from langchain_core.prompts import ChatPromptTemplate
+
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
 )
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+from langchain.agents import AgentExecutor
 
-llm = ChatOpenAI(temperature=0.9,max_tokens=100)
+load_dotenv()
 
+# Initialize the LLM
+llm = ChatOpenAI(
+    temperature=0,
+    max_tokens=100,
+  
+)
 
-tools_func=[SqlQueryGenerator,SqlQuerySummarizer]
+tool=[SqlQueryWritter,SqlQuerySummarizer]
+llm_withtools=llm.bind_tools(tool)
 
+def agent():
+    # Create the tools
 
-
-prompt = ChatPromptTemplate.from_messages(
+    MEMORY_KEY = "chat_history"
+    # Create the prompt for the agent
+    prompt = ChatPromptTemplate.from_messages(
         [
-            ("system","you are an helpfull assistent help me to write sql queires or summarize it"),
-        
-            ("user","{input}")
+            ("system", "you are a helpful assistant to write queries or summarize queries"),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad")
         ]
     )
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 
-agent =(
-    {
-        "input": lambda x: x["input"],
-        "agent_scratchpad": lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
-    }
-    | prompt
-    | llm.bind_tools(tools_func)
-    | OpenAIToolsAgentOutputParser()
+
+    llm_withtools=llm.bind_tools(tool)
+    agent=(
+        {
+            "input": lambda x: x["input"],
+            "agent_scratchpad": lambda x: format_to_openai_tool_messages(
+                x["intermediate_steps"]
+            ),
+        }
+        | prompt
+        | llm_withtools
+        | OpenAIToolsAgentOutputParser()
     )
 
-# User input
 
-agent_executor = AgentExecutor(agent=agent, tools=tools_func)
+    agent_executor = AgentExecutor(agent=agent, tools=tool)
 
+    return agent_executor
 
-res = agent_executor.invoke({"input":"top 20 records display"})
-
-print(res)
-
-
+def generate_response(agent_excutor,user_input):
+    response = agent_excutor.invoke({"input":user_input})
+    return response['output']
 
 
+
+if __name__=="__main__":
+    agent_excutor=agent()
+    input="top 20 records sql sql query"
+    res=generate_response(agent_excutor,input)
+    print(res)

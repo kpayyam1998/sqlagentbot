@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 llm = ChatOpenAI(
-    temperature=0.9,max_tokens=500
+    model="gpt-4o",temperature=0.9,max_tokens=500
 )
 
 @tool
-def SqlQuerySummarizer(user_input : str)->str:
+def SqlQueryWritter(user_input : str)->str:
     """
     A tool that generates SQL queries based on user input.
     """
