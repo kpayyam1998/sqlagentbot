@@ -29,7 +29,7 @@ class LangAgent:
         self.chat_history=[]
 
 
-    def agent(self):
+    def botagent(self):
 
             # Create the prompt for the agent
             prompt = ChatPromptTemplate.from_messages(
@@ -67,9 +67,9 @@ class LangAgent:
 
 
 
-if __name__=="__main__":
-    lang_agent = LangAgent()
-    agent_excutor = lang_agent.agent()
-    input = "I am running pencil company name "
-    res = lang_agent.generate_response(agent_excutor,input)
-    print(res)
+# if __name__=="__main__":
+#     lang_agent = LangAgent()
+#     agent_excutor = lang_agent.botagent()
+#     input = "I am running pencil company name "
+#     res = lang_agent.generate_response(agent_excutor,input)
+#     print(res)
