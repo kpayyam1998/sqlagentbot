@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from tools import SqlQuerySummarizer,SqlQueryWritter
+from tools import CompanyNameGenerator,SqlQueryWritter
 
 from langchain.prompts import ChatPromptTemplate
 from langchain.prompts import MessagesPlaceholder
@@ -20,7 +20,7 @@ llm = ChatOpenAI(
   
 )
 
-tool=[SqlQueryWritter,SqlQuerySummarizer]
+tool=[SqlQueryWritter,CompanyNameGenerator]
 llm_withtools=llm.bind_tools(tool)
 
 def agent():
@@ -63,6 +63,6 @@ def generate_response(agent_excutor,user_input):
 
 if __name__=="__main__":
     agent_excutor=agent()
-    input="top 20 records sql sql query"
+    input="I am running pencil company name "
     res=generate_response(agent_excutor,input)
     print(res)
