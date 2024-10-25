@@ -3,5 +3,6 @@ langchain
 langchain-openai==0.2.3
 Flask==3.0.3
 openai==1.52.2
+langchain-community==0.3.3
 
 
