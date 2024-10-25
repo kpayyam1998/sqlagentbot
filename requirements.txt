@@ -6,3 +6,6 @@ openai==1.52.2
 langchain-community==0.3.3
 pydantic==2.9.2
 faiss-cpu==1.9.0
+langchain-chroma==0.1.4
+chromadb==0.5.15
+unstructured==0.16.2
