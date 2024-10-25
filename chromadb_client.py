@@ -62,7 +62,7 @@ qa_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-document_chain = create_stuff_documents_chain(ll=openai,prompt=qa_prompt)
+document_chain = create_stuff_documents_chain(llm=openai,prompt=qa_prompt)
 
 # response=document_chain.invoke(
 #     {
@@ -79,12 +79,21 @@ def parse_retriver_input(params:Dict):
     return params['chat_history'][-1].content
 
 
-RunnablePassthrough.assign(
+retrieval_chain=RunnablePassthrough.assign(
     context = parse_retriver_input | retriever,
 ).assign(answer = document_chain)
 
 #Creating Chain to make better answer
 
+final_res=retrieval_chain.invoke(
+    {
+        "chat_history": [
+            HumanMessage(content="Explain about this Millennia Credit Card card and offer details?")
+        ],
+    }
+)
+
+print(final_res['answer'])
 
 
 
