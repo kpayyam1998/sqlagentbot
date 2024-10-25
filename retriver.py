@@ -15,10 +15,8 @@ class Retriver:
         # retriever
         retrieverdb=vectordb.as_retriever(search_kwargs={'k': 3})
 
-        #llm = OpenAI(temperature=0.9,max_tokens=400)
 
         # Create chain
         chain=RetrievalQAWithSourcesChain.from_chain_type(self.llm, chain_type="stuff", retriever=retrieverdb)
 
         return chain
-
