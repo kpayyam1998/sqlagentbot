@@ -1,58 +1,57 @@
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.agents.format_scratchpad.openai_tools import (
-    format_to_openai_tool_messages,
-)
-from dotenv import load_dotenv
+import os
+import streamlit as st
+from streamlit_chat import message
+import requests  # Required for making API requests
 
-from langchain.agents import AgentExecutor
+st.title("CreditCard QA Bot using OpenAI")
 
-load_dotenv()
+# API endpoint
+API_URL = "http://127.0.0.1:5000/functioncallchat"
 
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+def process_question(data):
+    """Makes a request to the API with user input and returns the response."""
+    try:
+        # Send a POST request to the API
+        response = requests.post(API_URL, json=data)
+        
+        # Check if the response is successful
+        if response.status_code == 200:
+            # Parse the JSON response from the API
+            return response.json().get("response", "No response received.")
+        else:
+            return f"Error: Received status code {response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"Error: Could not connect to API. {str(e)}"
 
-from langchain.agents import tool
+def display_conversation(state):
+    """Displays the conversation history using Streamlit messages."""
+    for i in range(len(state["generated"])):
+        # Display the user message
+        message(state["past"][i], is_user=True, key=f"user_{i}")
+        # Display the bot's response
+        message(state["generated"][i], key=f"bot_{i}")
 
+def main():
+    st.markdown("<h4 style='color:black;'>Chat Here</h4>", unsafe_allow_html=True)
 
-@tool
-def get_word_length(word: str) -> int:
-    """Returns the length of a word."""
-    return len(word)
+    # Prompt for user input
+    user_input = st.text_input("Prompt", key="input")
 
-tools = [get_word_length]
-llm_with_tools = llm.bind_tools(tools)
+    # Initialize session state to store conversation history
+    if "generated" not in st.session_state:
+        st.session_state["generated"] = ["I am ready to help you"]
+    if "past" not in st.session_state:
+        st.session_state["past"] = ["hey there"]
 
+    # Process user input and get a response
+    if user_input:
+        answer = process_question({'prompt': user_input})
+        st.session_state["past"].append(user_input)
+        st.session_state["generated"].append(answer)
 
+    # Display the conversation history
+    if st.session_state["generated"]:
+        display_conversation(st.session_state)
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are very powerful assistant, but don't know current events",
-        ),
-        ("user", "{input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
-    ]
-)
-
-
-
-agent = (
-    {
-        "input": lambda x: x["input"],
-        "agent_scratchpad": lambda x: format_to_openai_tool_messages(
-            x["intermediate_steps"]
-        ),
-    }
-    | prompt
-    | llm_with_tools
-    | OpenAIToolsAgentOutputParser()
-)
-
-
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-res=agent_executor.invoke({"input":"how many letter from kp"})
-
-print(res)
+if __name__ == "__main__":
+    main()
