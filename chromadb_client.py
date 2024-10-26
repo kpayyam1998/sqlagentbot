@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-from langchain_community.vectorstores import Chroma
+#from langchain_chr.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from langchain_openai import ChatOpenAI,OpenAIEmbeddings
 from langchain_community.document_loaders import UnstructuredURLLoader
@@ -8,94 +9,109 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from langchain_core.messages import HumanMessage,AIMessage
 from langchain_core.runnables import RunnablePassthrough
+from langchain.chains import create_retrieval_chain,create_history_aware_retriever
 
 from typing import Dict
-load_dotenv()
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+chat_history = []
 
-openai = ChatOpenAI(model="gpt-3.5-turbo-1106",temperature=0.7)
+class Chormadb:
+    def __init__(self):
+        load_dotenv()
+        self.openai = ChatOpenAI(model="gpt-3.5-turbo-1106",temperature=0.7)
+        self.embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
-# Load url
-loaders=UnstructuredURLLoader(urls=[
-    "https://www.icicibank.com/personal-banking/cards/credit-card",
-    "https://www.hdfcbank.com/personal/pay/cards/credit-cards",
-])
-
-data=loaders.load()
+    
+    def createdb(self):
 
 
+        
 
-# splitting chunkingour data
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=0
-)
-docs=text_splitter.split_documents(data)
+        # Load url
+        loaders=UnstructuredURLLoader(urls=[
+            "https://www.icicibank.com/personal-banking/cards/credit-card",
+            "https://www.hdfcbank.com/personal/pay/cards/credit-cards",
+        ])
 
-
-vector_store=Chroma.from_documents(documents=docs,embedding=embeddings,persist_directory="./ChormaDB")
-
-
-retriever = vector_store.as_retriever(k=4)
-
-docs=retriever.invoke("Explain about this Millennia Credit Card card and offer details")
+        data=loaders.load()
 
 
 
+        # splitting chunkingour data
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=0
+        )
+        docs=text_splitter.split_documents(data)
 
-SYSTEM_TEMPLATE = """
+
+        vector_store=Chroma.from_documents(documents=docs,embedding=self.embeddings,persist_directory="./ChormaDB")
+
+        print("DB created")
+
+    def loadchromadb(self):
+        vector_store = Chroma(persist_directory="./ChormaDB",embedding_function=self.embeddings)
+
+        retriever = vector_store.as_retriever(k=4)
+
+        return retriever
+    
+    def generate_response(self):
+        retriever = self.loadchromadb()
+
+        contextualize_q_system_prompt = """Given a chat history and the latest user question \
+        which might reference context in the chat history, formulate a standalone question \
+        which can be understood without the chat history. Do NOT answer the question, \
+        just reformulate it if needed and otherwise return it as is."""
+        contextualize_q_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", contextualize_q_system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+        history_aware_retriever = create_history_aware_retriever(
+            self.openai, retriever, contextualize_q_prompt
+        )
+
+
+
+
+
+        SYSTEM_TEMPLATE = """
             You are the helpfull assistant to get best and suitable Answer the user's questions based on the below context. 
             If the context doesn't contain any relevant information to the question, don't make something up and just say "I don't know":
 
-            <context>
-            {context}
-            </context>
-            """
-qa_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            SYSTEM_TEMPLATE
-        ),
-        MessagesPlaceholder(variable_name="chat_history")
-    ]
-)
-
-document_chain = create_stuff_documents_chain(llm=openai,prompt=qa_prompt)
-
-# response=document_chain.invoke(
-#     {
-#         "context": docs,
-#         "chat_history":(
-#             HumanMessage(content="Explain about this Millennia Credit Card card and offer details")
-#         )
-#     }
-# )
+                    <context>
+                    {context}
+                    </context>
+                    """
+        qa_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    SYSTEM_TEMPLATE
+                ),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}")
+            ]
+        )
 
 
 
-def parse_retriver_input(params:Dict):
-    return params['chat_history'][-1].content
+        question_answer_chain = create_stuff_documents_chain(llm=self.openai,prompt=qa_prompt)
+
+        rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+        return rag_chain
+        
 
 
-retrieval_chain=RunnablePassthrough.assign(
-    context = parse_retriver_input | retriever,
-).assign(answer = document_chain)
+if __name__=="__main__":
+    db = Chormadb()
 
-#Creating Chain to make better answer
+    rag_chain = db.generate_response()
 
-final_res=retrieval_chain.invoke(
-    {
-        "chat_history": [
-            HumanMessage(content="Explain about this Millennia Credit Card card and offer details?")
-        ],
-    }
-)
+    response = rag_chain.invoke({"input" : "Explain about this Millennia Credit Card card and offer details", "chat_history" :chat_history})
 
-print(final_res['answer'])
-
-
-
-# if __name__=="__main__":
-#     print(res)
+    print(response['answer'])
