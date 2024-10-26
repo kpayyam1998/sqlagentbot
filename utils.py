@@ -1,6 +1,7 @@
 import json
 from openai import OpenAI
 from retriver import Retriver
+from chromadb_client import Chormadb
 openai=OpenAI()
 
 def get_fancy_names(question :str):
@@ -21,14 +22,10 @@ def get_fancy_names(question :str):
    
 
 def get_creditcard_info(question :str):
-    
-    retriver = Retriver()
-    chain = retriver.vectordb_retriver()
+    chat_history = []
+    db=Chormadb()
+    rag_chain = db.generate_response()
+    response = rag_chain.invoke({"input" : question, "chat_history" :chat_history})
 
-    response=chain.invoke({
-    "question": question
-    })
+    return response['answer']
 
-    response =json.dumps(response['answer'])
-
-    return response

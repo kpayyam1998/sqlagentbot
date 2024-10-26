@@ -1,5 +1,5 @@
 python-dotenv
-langchain
+langchain==0.3.4
 langchain-openai==0.2.3
 Flask==3.0.3
 openai==1.52.2
