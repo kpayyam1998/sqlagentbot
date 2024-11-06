@@ -11,3 +11,4 @@ chromadb==0.5.15
 unstructured==0.16.2
 streamlit==1.39.0
 streamlit-chat==0.1.1
+pymongo==4.10.1
