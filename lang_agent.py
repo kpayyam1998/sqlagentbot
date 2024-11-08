@@ -137,6 +137,6 @@ class LangAgent:
 
     
 
-if __name__ == '__main__':
-    agent = LangAgent()
-    print(agent.sql_or_vector("How to retrieve the top 10 records in sql table?")) # Explain about this Millennia Credit Card card and offer details?
+# if __name__ == '__main__':
+#     agent = LangAgent()
+#     print(agent.sql_or_vector("How to retrieve the top 10 records in sql table?")) # Explain about this Millennia Credit Card card and offer details?
