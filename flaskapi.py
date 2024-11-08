@@ -1,6 +1,8 @@
 from flask import Flask,request
-from agent import LangAgent
+# from agent import LangAgent
 from function_call_tools import FunctionCall
+
+from lang_agent import LangAgent
 from logging.config import dictConfig
 
 # Logging configuration for Console
@@ -30,6 +32,7 @@ dictConfig(
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def start():
     app.logger.info("Started")
@@ -45,17 +48,22 @@ def error():
 def chat():
     try:
 
+        app.logger.info("Api request started..")
+        
         prompt = request.json["prompt"]
-        #print(f"User input: {prompt}")
+        
+        app.logger.info(f"received user prompt : {prompt}")
+
         if not prompt:
+            app.logger.error("not received user prompt")
             return {"error": "No user input provided"}, 400
         
         # Create an instance of the LangAgent class and use it to generate a response
         lang_agent = LangAgent()
-        agentexcutor = lang_agent.botagent()
+        # agentexcutor = lang_agent.botagent()
         
-
-        response = lang_agent.generate_response(agentexcutor,prompt)
+        app.logger.info("passed user input to LLM")
+        response = lang_agent.sql_or_vector(prompt)
 
         #print(response)
         return {"response": response}
