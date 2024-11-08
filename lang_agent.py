@@ -129,12 +129,11 @@ class LangAgent:
 
         if response_content.lower() =='sql':
             qry_response = self._generateSQlQuery(query,config)
-            print(qry_response)
+            return qry_response
+        
         else :
             response = self._generateVectorResponse(query,config)
-
-            print(response)
-
+            return response
     
 
 # if __name__ == '__main__':
