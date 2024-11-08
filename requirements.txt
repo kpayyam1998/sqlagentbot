@@ -12,3 +12,4 @@ unstructured==0.16.2
 streamlit==1.39.0
 streamlit-chat==0.1.1
 pymongo==4.10.1
+langchain-mongodb==0.2.0

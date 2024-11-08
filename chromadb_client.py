@@ -52,7 +52,7 @@ class Chormadb:
     def loadchromadb(self):
         vector_store = Chroma(persist_directory="./ChormaDB",embedding_function=self.embeddings)
 
-        retriever = vector_store.as_retriever(k=4)
+        retriever = vector_store.as_retriever(k=3)
 
         return retriever
     
