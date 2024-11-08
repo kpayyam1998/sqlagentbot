@@ -1,8 +1,6 @@
 from flask import Flask,request
 from agent import LangAgent
 from function_call_tools import FunctionCall
-
-import logging
 from logging.config import dictConfig
 
 # Logging configuration for Console
